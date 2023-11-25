@@ -8,12 +8,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/robshakir/aite/srv"
+	"github.com/openconfig/aite/srv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"k8s.io/klog/v2"
 
-	apb "github.com/robshakir/aite/proto/aite"
+	apb "github.com/openconfig/aite/proto/aite"
 )
 
 var (

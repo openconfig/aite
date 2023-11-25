@@ -12,13 +12,13 @@ import (
 	"golang.org/x/sys/unix"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"k8s.io/klog/v2"
+	"k8s.io/klog"
 
 	"github.com/florianl/go-tc"
 	"github.com/florianl/go-tc/core"
 	"github.com/openconfig/magna/intf"
 
-	apb "github.com/robshakir/aite/proto/aite"
+	apb "github.com/openconfig/aite/proto/aite"
 )
 
 // S is the wrapper for the Aite service implementation.
@@ -46,18 +46,64 @@ func (s *S) Stop() error {
 	return nil
 }
 
-// InterfaceState implements the InterfaceState method of the Aite service. It
-// shuts down the interface specified in the request.
-func (s *S) InterfaceState(_ context.Context, req *apb.InterfaceStateRequest) (*apb.InterfaceStateResponse, error) {
-	state := intf.InterfaceUp
-	if req.Shutdown {
-		state = intf.InterfaceDown
+// SetInterfaceState implements the InterfaceState RPC for the Aite service. It
+// manipulates parameters of the interface including impairments.
+func (s *S) SetInterface(ctx context.Context, req *apb.SetInterfaceRequest) (*apb.SetInterfaceResponse, error) {
+	if req.Name == "" || !intf.ValidInterface(req.Name) {
+		return nil, status.Errorf(codes.InvalidArgument, "invalid interface name specified, %s", req.Name)
 	}
-	if err := intf.InterfaceState(req.Name, state); err != nil {
+
+	if req.GetParams() == nil {
+		return nil, status.Errorf(codes.InvalidArgument, "params is a required argument")
+	}
+
+	params := req.GetParams()
+	if params.State == apb.InterfaceState_IS_UNSPECIFIED {
+		return nil, status.Errorf(codes.InvalidArgument, "interface state must be specified")
+	}
+
+	var iState intf.IntState
+	switch params.State {
+	case apb.InterfaceState_IS_UP:
+		iState = intf.InterfaceUp
+	case apb.InterfaceState_IS_ADMIN_DOWN:
+		iState = intf.InterfaceDown
+	default:
+		return nil, status.Errorf(codes.InvalidArgument, "invalid interface state %s specified", params.State)
+	}
+
+	if params.LossPct >= 100 {
+		return nil, status.Errorf(codes.InvalidArgument, "loss percentage must be 0 < loss <= 100, got: %d", params.LossPct)
+	}
+
+	if err := s.applyInterfaceState(ctx, req.Name, iState, params.LossPct, params.LatencyMsec); err != nil {
 		return nil, status.Errorf(codes.Internal, "cannot set interface state, %v", err)
 	}
 
-	return &apb.InterfaceStateResponse{}, nil
+	return &apb.SetInterfaceResponse{
+		Name: req.Name,
+		Params: &apb.InterfaceStateParams{
+			State:       req.GetParams().GetState(),
+			LatencyMsec: req.GetParams().GetLatencyMsec(),
+			LossPct:     req.GetParams().GetLossPct(),
+		},
+	}, nil
+}
+
+// applyInterfaceState applies the state changes to the interface with the specified name. The
+// state indicates any change in administrative or operational status. lossPct indicates a percentage
+// latency that should be applied, and latencyMsec is an additional latency that should be applied
+// to packets traversing the interface.
+func (s *S) applyInterfaceState(ctx context.Context, name string, state intf.IntState, lossPct, latencyMsec uint32) error {
+	if err := intf.InterfaceState(name, state); err != nil {
+		return status.Errorf(codes.Internal, "cannot set interface state, %v", err)
+	}
+
+	if err := s.impairInterface(ctx, name, lossPct, latencyMsec); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 const (
@@ -66,12 +112,14 @@ const (
 	MaxUint32 uint32 = 0xFFFFFFFF
 )
 
-// ImpairInterface implements the ImpairInterface method mof the Aite service. It
-// adds the specified impairment to the interface specified in the request.
-func (s *S) ImpairInterface(ctx context.Context, req *apb.ImpairInterfaceRequest) (*apb.ImpairInterfaceResponse, error) {
-	intID, err := net.InterfaceByName(req.Name)
+// impairInterface applies the specified impairments to the interface with the specified name. lossPct
+// indicates a percentage packet loss to be applied, and latencyMsec an additional artificial latency
+// to be applied. The function will set the underlying kernel parameters regardless of their current
+// state.
+func (s *S) impairInterface(ctx context.Context, name string, lossPct, latencyMsec uint32) error {
+	intID, err := net.InterfaceByName(name)
 	if err != nil {
-		return nil, status.Errorf(codes.Unknown, "cannot find interface %s", req.Name)
+		return status.Errorf(codes.InvalidArgument, "cannot find interface %s", name)
 	}
 
 	qopt := tc.NetemQopt{
@@ -80,19 +128,15 @@ func (s *S) ImpairInterface(ctx context.Context, req *apb.ImpairInterfaceRequest
 		Limit: 1000,
 	}
 
-	if req.GetLatencyMsec() != 0 {
-		// latency is set in µsec, and is fed to the kernel as CPU
-		// ticks, not msec. Thus, we need to use the tc package's
-		// helper to convert to ticks.
-		qopt.Latency = core.Time2Tick(uint32(req.LatencyMsec * 1000))
-		klog.Infof("setting device %s latency to %d msec", req.Name, req.LatencyMsec)
-	}
+	// latency is set in µsec, and is fed to the kernel as CPU
+	// ticks, not msec. Thus, we need to use the tc package's
+	// helper to convert to ticks.
+	qopt.Latency = core.Time2Tick(uint32(latencyMsec * 1000))
+	klog.Infof("setting device %s latency to %d msec", name, latencyMsec)
 
-	if pct := req.GetLossPct(); pct != 0 {
-		p := uint32(math.Round(float64(MaxUint32) * (float64(pct) / 100.0)))
-		qopt.Loss = p
-		klog.Infof("setting device %s loss to %d%% (val: %d)", req.Name, pct, p)
-	}
+	p := uint32(math.Round(float64(MaxUint32) * (float64(lossPct) / 100.0)))
+	qopt.Loss = p
+	klog.Infof("setting device %s loss to %d%% (val: %d)", name, lossPct, p)
 
 	qdisc := tc.Object{
 		Msg: tc.Msg{
@@ -110,14 +154,17 @@ func (s *S) ImpairInterface(ctx context.Context, req *apb.ImpairInterfaceRequest
 		},
 	}
 
+	// We should not ever block on the qdisc call below, but to ensure that we have a
+	// reasonable belt and braces approach here, we use the parent context to ensure
+	// that we cancel the context if we do.
 	_, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	klog.Infof("calling qdisc replace")
 	if err := s.tc.Qdisc().Replace(&qdisc); err != nil {
-		return nil, status.Errorf(codes.Internal, "cannot apply impairment to interface, %v", err)
+		return status.Errorf(codes.Internal, "cannot apply impairment to interface, %v", err)
 	}
 	klog.Infof("returned from qdisc replace")
 
-	return &apb.ImpairInterfaceResponse{}, nil
+	return nil
 }

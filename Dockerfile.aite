@@ -5,9 +5,9 @@ RUN apk add build-base
 RUN apk add zsh
 
 # Run docker build from root.
-RUN mkdir -p /go/src/github.com/robshakir/aite
-COPY . /go/src/github.com/robshakir/aite
-WORKDIR /go/src/github.com/robshakir/aite/cmd/aite
+RUN mkdir -p /go/src/github.com/openconfig/aite
+COPY . /go/src/github.com/openconfig/aite
+WORKDIR /go/src/github.com/openconfig/aite/cmd/aite
 RUN GOOS=linux GOARCH=amd64 go build
 
 # Run second stage for the container that we actually run.
@@ -16,7 +16,7 @@ RUN apk add libpcap
 # Useful for debugging tc inside the aite container.
 RUN apk add iproute2-tc
 RUN mkdir /app
-COPY --from=builder go/src/github.com/robshakir/aite/cmd/aite/aite /app
+COPY --from=builder go/src/github.com/openconfig/aite/cmd/aite/aite /app
 RUN mkdir /data
 
 EXPOSE 60051

@@ -7,7 +7,7 @@
 // Package aite implements a disruptive service which can manipulate resources
 // within a KNE pod.
 //
-// It is named after Aite (Até) the green goddess of mischief, delusion and ruin.
+// It is named after Aite (Até) the Greek goddess of mischief, delusion and ruin.
 
 package aite
 
@@ -24,19 +24,15 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	Aite_InterfaceState_FullMethodName  = "/net_sdn_decentralized.aite.Aite/InterfaceState"
-	Aite_ImpairInterface_FullMethodName = "/net_sdn_decentralized.aite.Aite/ImpairInterface"
+	Aite_SetInterface_FullMethodName = "/openconfig.aite.Aite/SetInterface"
 )
 
 // AiteClient is the client API for Aite service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AiteClient interface {
-	// InterfaceState changes the state of an interface within the target pod.
-	InterfaceState(ctx context.Context, in *InterfaceStateRequest, opts ...grpc.CallOption) (*InterfaceStateResponse, error)
-	// ImpairInterface adds a traffic impairment (loss, latency, reordering etc.)
-	// to the specified interface.
-	ImpairInterface(ctx context.Context, in *ImpairInterfaceRequest, opts ...grpc.CallOption) (*ImpairInterfaceResponse, error)
+	// SetInterface changes the state of an interface within the target pod.
+	SetInterface(ctx context.Context, in *SetInterfaceRequest, opts ...grpc.CallOption) (*SetInterfaceResponse, error)
 }
 
 type aiteClient struct {
@@ -47,18 +43,9 @@ func NewAiteClient(cc grpc.ClientConnInterface) AiteClient {
 	return &aiteClient{cc}
 }
 
-func (c *aiteClient) InterfaceState(ctx context.Context, in *InterfaceStateRequest, opts ...grpc.CallOption) (*InterfaceStateResponse, error) {
-	out := new(InterfaceStateResponse)
-	err := c.cc.Invoke(ctx, Aite_InterfaceState_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *aiteClient) ImpairInterface(ctx context.Context, in *ImpairInterfaceRequest, opts ...grpc.CallOption) (*ImpairInterfaceResponse, error) {
-	out := new(ImpairInterfaceResponse)
-	err := c.cc.Invoke(ctx, Aite_ImpairInterface_FullMethodName, in, out, opts...)
+func (c *aiteClient) SetInterface(ctx context.Context, in *SetInterfaceRequest, opts ...grpc.CallOption) (*SetInterfaceResponse, error) {
+	out := new(SetInterfaceResponse)
+	err := c.cc.Invoke(ctx, Aite_SetInterface_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -69,11 +56,8 @@ func (c *aiteClient) ImpairInterface(ctx context.Context, in *ImpairInterfaceReq
 // All implementations must embed UnimplementedAiteServer
 // for forward compatibility
 type AiteServer interface {
-	// InterfaceState changes the state of an interface within the target pod.
-	InterfaceState(context.Context, *InterfaceStateRequest) (*InterfaceStateResponse, error)
-	// ImpairInterface adds a traffic impairment (loss, latency, reordering etc.)
-	// to the specified interface.
-	ImpairInterface(context.Context, *ImpairInterfaceRequest) (*ImpairInterfaceResponse, error)
+	// SetInterface changes the state of an interface within the target pod.
+	SetInterface(context.Context, *SetInterfaceRequest) (*SetInterfaceResponse, error)
 	mustEmbedUnimplementedAiteServer()
 }
 
@@ -81,11 +65,8 @@ type AiteServer interface {
 type UnimplementedAiteServer struct {
 }
 
-func (UnimplementedAiteServer) InterfaceState(context.Context, *InterfaceStateRequest) (*InterfaceStateResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method InterfaceState not implemented")
-}
-func (UnimplementedAiteServer) ImpairInterface(context.Context, *ImpairInterfaceRequest) (*ImpairInterfaceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ImpairInterface not implemented")
+func (UnimplementedAiteServer) SetInterface(context.Context, *SetInterfaceRequest) (*SetInterfaceResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SetInterface not implemented")
 }
 func (UnimplementedAiteServer) mustEmbedUnimplementedAiteServer() {}
 
@@ -100,38 +81,20 @@ func RegisterAiteServer(s grpc.ServiceRegistrar, srv AiteServer) {
 	s.RegisterService(&Aite_ServiceDesc, srv)
 }
 
-func _Aite_InterfaceState_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InterfaceStateRequest)
+func _Aite_SetInterface_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SetInterfaceRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AiteServer).InterfaceState(ctx, in)
+		return srv.(AiteServer).SetInterface(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Aite_InterfaceState_FullMethodName,
+		FullMethod: Aite_SetInterface_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AiteServer).InterfaceState(ctx, req.(*InterfaceStateRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Aite_ImpairInterface_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ImpairInterfaceRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AiteServer).ImpairInterface(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Aite_ImpairInterface_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AiteServer).ImpairInterface(ctx, req.(*ImpairInterfaceRequest))
+		return srv.(AiteServer).SetInterface(ctx, req.(*SetInterfaceRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -140,16 +103,12 @@ func _Aite_ImpairInterface_Handler(srv interface{}, ctx context.Context, dec fun
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Aite_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "net_sdn_decentralized.aite.Aite",
+	ServiceName: "openconfig.aite.Aite",
 	HandlerType: (*AiteServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "InterfaceState",
-			Handler:    _Aite_InterfaceState_Handler,
-		},
-		{
-			MethodName: "ImpairInterface",
-			Handler:    _Aite_ImpairInterface_Handler,
+			MethodName: "SetInterface",
+			Handler:    _Aite_SetInterface_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
