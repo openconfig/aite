@@ -1,6 +1,6 @@
 module github.com/openconfig/aite
 
-go 1.21.4
+go 1.20
 
 require (
 	github.com/florianl/go-tc v0.4.2
