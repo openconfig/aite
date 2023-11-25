@@ -24,49 +24,49 @@ package openconfig.aite;
 option go_package = "github.com/openconfig/aite/proto/aite;aite";
 
 service Aite {
-    // SetInterface changes the state of an interface within the target pod.
-    rpc SetInterface(SetInterfaceRequest) returns (SetInterfaceResponse);
+  // SetInterface changes the state of an interface within the target pod.
+  rpc SetInterface(SetInterfaceRequest) returns (SetInterfaceResponse);
 
-    // TODO(robjs): Add RPC for retrieving interfaces from the system such that
-    // interface discovery can be performed.
+  // TODO(robjs): Add RPC for retrieving interfaces from the system such that
+  // interface discovery can be performed.
 }
 
 // InterfaceState specifies the state that an interface should be placed into.
 enum InterfaceState {
-    // Invalid zero value.
-    IS_UNSPECIFIED = 0;
-    // The interface should be administratively and operationally up.
-    IS_UP = 1;
-    // The interface should be administratively down.
-    IS_ADMIN_DOWN = 2;
+  // Invalid zero value.
+  IS_UNSPECIFIED = 0;
+  // The interface should be administratively and operationally up.
+  IS_UP = 1;
+  // The interface should be administratively down.
+  IS_ADMIN_DOWN = 2;
 }
 
 message SetInterfaceRequest {
-    // Name of the interface that is to be manipulated.
-    string name = 1;
-    // Declarative set of parameters that the interface should be configured
-    // with.
-    InterfaceStateParams params = 2;
+  // Name of the interface that is to be manipulated.
+  string name = 1;
+  // Declarative set of parameters that the interface should be configured
+  // with.
+  InterfaceStateParams params = 2;
 }
 
 message InterfaceStateParams {
-    // The state that the interface should be in at the end of the state
-    // transition. This field must be specified.
-    InterfaceState state = 1;
+  // The state that the interface should be in at the end of the state
+  // transition. This field must be specified.
+  InterfaceState state = 1;
 
-    // When specified, adds additional latency to packets traversing the
-    // interface. If set to the zero value, no additional latency is added.
-    uint32 latency_msec = 2;
+  // When specified, adds additional latency to packets traversing the
+  // interface. If set to the zero value, no additional latency is added.
+  uint32 latency_msec = 2;
     
-    // When specified, adds loss with the specified percentage to packets
-    // traversing the interface. If set to the zero value, zero loss is
-    // injected.
-    uint32 loss_pct = 3;
+  // When specified, adds loss with the specified percentage to packets
+  // traversing the interface. If set to the zero value, zero loss is
+  // injected.
+  uint32 loss_pct = 3;
 }
 
 // InterfaceStateResponse returns the intended state of the interface once an
 // interface state request has been accepted.
 message SetInterfaceResponse {
-    string name = 1;
-    InterfaceStateParams params = 2;
+  string name = 1;
+  InterfaceStateParams params = 2;
 }

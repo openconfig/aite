@@ -145,7 +145,7 @@ func (s *S) impairInterface(ctx context.Context, name string, lossPct, latencyMs
 	// latency is set in µsec, and is fed to the kernel as CPU
 	// ticks, not msec. Thus, we need to use the tc package's
 	// helper to convert to ticks.
-	qopt.Latency = core.Time2Tick(uint32(latencyMsec * 1000))
+	qopt.Latency = core.Time2Tick(latencyMsec * 1000)
 	klog.Infof("setting device %s latency to %d msec", name, latencyMsec)
 
 	p := uint32(math.Round(float64(MaxUint32) * (float64(lossPct) / 100.0)))
