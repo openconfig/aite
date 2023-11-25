@@ -47,7 +47,11 @@ func main() {
 	if err != nil {
 		klog.Exitf("cannot create Aite server, %v", err)
 	}
-	defer as.Stop()
+	defer func() {
+		if err := as.Stop(); err != nil {
+			klog.Errorf("error stopping aite: %v", err)
+		}
+	}()
 	apb.RegisterAiteServer(serv, as)
 
 	reflection.Register(serv)
@@ -63,6 +67,10 @@ func main() {
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, syscall.SIGINT, syscall.SIGTERM)
 
-	go serv.Serve(lis)
+	go func() {
+		if err := serv.Serve(lis); err != nil {
+			klog.Exitf("cannot start server, %v", err)
+		}
+	}()
 	<-done
 }

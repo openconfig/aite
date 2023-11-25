@@ -17,7 +17,8 @@ syntax = "proto3";
 // Package aite implements a disruptive service which can manipulate resources
 // within a KNE pod.
 //
-// It is named after Aite (Até) the Greek goddess of mischief, delusion and ruin.
+// It is named after Aite (Até) the Greek goddess of mischief, delusion 
+// and ruin.
 package openconfig.aite;
 
 option go_package = "github.com/openconfig/aite/proto/aite;aite";
@@ -53,12 +54,13 @@ message InterfaceStateParams {
     // transition. This field must be specified.
     InterfaceState state = 1;
 
-    // When specified, adds additional latency to packets traversing the interface.
-    // If set to the zero value, no additional latency is added.
+    // When specified, adds additional latency to packets traversing the
+    // interface. If set to the zero value, no additional latency is added.
     uint32 latency_msec = 2;
     
-    // When specified, adds loss with the specified percentage to packets traversing
-    // the interface. If set to the zero value, zero loss is injected.
+    // When specified, adds loss with the specified percentage to packets
+    // traversing the interface. If set to the zero value, zero loss is
+    // injected.
     uint32 loss_pct = 3;
 }
 
