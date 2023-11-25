@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+// Package aite implements a disruptive service which can manipulate resources
+// within a KNE pod.
+//
+// It is named after Aite (Até) the green goddess of mischief, delusion and ruin.
+package net_sdn_decentralized.aite;
+
+option go_package = "github.com/robshakir/aite/proto/aite;aite";
+
+service Aite {
+    // InterfaceState changes the state of an interface within the target pod.
+    rpc InterfaceState(InterfaceStateRequest) returns (InterfaceStateResponse);
+
+    // ImpairInterface adds a traffic impairment (loss, latency, reordering etc.)
+    // to the specified interface.
+    rpc ImpairInterface(ImpairInterfaceRequest) returns (ImpairInterfaceResponse);
+}
+
+message InterfaceStateRequest {
+    // Name of the interface that is to be manipulated.
+    string name = 1;
+
+    // If set to true, the interface should be set to administratively down.
+    bool shutdown = 2;
+}
+
+message InterfaceStateResponse {}
+
+message ImpairInterfaceRequest {
+    // Name of the interface that is to be manipulated.
+    string name = 1;
+    // When specified, adds additional latency to packets traversing the interface.
+    uint32 latency_msec = 2;
+    // When specified, adds loss with the specified percentage to packets traversing
+    // the interface.
+    uint32 loss_pct = 3;
+}
+
+message ImpairInterfaceResponse {}
