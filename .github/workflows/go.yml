@@ -11,5 +11,9 @@ jobs:
   go:
     uses: openconfig/common-ci/.github/workflows/go.yml@125b6b58286d116b216e45c33cb859f547965d61
 
-  linter:
-    uses: openconfig/common-ci/.github/workflows/linter.yml@125b6b58286d116b216e45c33cb859f547965d61
+#  TODO(robjs): Discuss with wenbli how the protolint config file is meant
+#               to be handled here.
+#  linter:
+#    uses: openconfig/common-ci/.github/workflows/linter.yml@125b6b58286d116b216e45c33cb859f547965d61
+
+    
