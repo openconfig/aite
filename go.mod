@@ -7,7 +7,7 @@ require (
 	github.com/openconfig/magna v0.0.0-20231125035949-e9288e23d88d
 	golang.org/x/sys v0.13.0
 	google.golang.org/grpc v1.59.0
-	google.golang.org/protobuf v1.31.0
+	google.golang.org/protobuf v1.33.0
 	k8s.io/klog v1.0.0
 	k8s.io/klog/v2 v2.110.1
 )
